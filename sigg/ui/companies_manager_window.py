@@ -1,11 +1,16 @@
 import logging
 
 from gi.repository import Gtk
-from bidict import bidict, inverted
 
 from constants import RESOURCES_DIR
-from models import Company, Vehicle, Settings
+from util import EXPIRATION_DAYS, PAYMENT_TYPES
+from models import Company
+
 from .vehicles_manager_window import VehiclesManagerWindow
+from .delivery_notes_manager_window import DeliveryNotesManagerWindow
+from .preferences_window import PreferencesWindow
+from .invoices_window import InvoicesWindow
+
 
 class CompaniesManagerWindow:
 
@@ -15,14 +20,6 @@ class CompaniesManagerWindow:
     REMOVE_COLUMN = 3
     DELIVERY_NOTES_COLUMN = 4
     INVOICE_COLUMN = 5
-
-    EXPIRATION_DAYS = (30, 60, 90, 120, 180)
-    PAYMENT_TYPES = bidict({"CONFIRMING": "Confirming",
-            "BANK_TRANSFER": "Bank transfer",
-            "PROMISSORY_NOTE": "Promissory note",
-            "CASH": "Cash",
-            "PAID": "Paid",
-            "CHECK": "Check"})
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -85,18 +82,20 @@ class CompaniesManagerWindow:
         self.populate_expiration_days_combo()
 
     def populate_payment_type_combo(self):
-        for payment_type in self.PAYMENT_TYPES.values():
+        for payment_type in PAYMENT_TYPES.values():
             self.payment_type_combo.append(payment_type, payment_type)
 
     def populate_expiration_days_combo(self):
-        for expiration_day in self.EXPIRATION_DAYS:
+        for expiration_day in EXPIRATION_DAYS:
             eday = str(expiration_day)
             self.expiration_days_combo.append(eday, eday)
 
     def populate_treeview_model(self):
         for company in self.companies:
-            self.companies_model.append([company.code, company.name,
-                company.nif, "gtk-delete", "gtk-file", "gtk-print"])
+            self.companies_model.append(
+                    [company.code, company.name, company.nif,
+                     "gtk-delete", "gtk-file", "gtk-print"]
+                    )
 
     def populate_form(self, company):
         self.logger.debug("populate_form")
@@ -117,7 +116,12 @@ class CompaniesManagerWindow:
 
         self.iban_entry.set_text(company.iban)
         self.bank_name_entry.set_text(company.bank_name)
-        # TODO set combos values
+        self.payment_type_combo.set_active_id(
+                PAYMENT_TYPES[company.payment_type]
+                )
+        self.expiration_days_combo.set_active_id(
+                str(EXPIRATION_DAYS[company.expiration_days])
+                )
         self.first_payment_day_entry.set_text(str(company.first_payment_day))
         self.second_payment_day_entry.set_text(str(company.second_payment_day))
         self.third_payment_day_entry.set_text(str(company.third_payment_day))
@@ -156,6 +160,7 @@ class CompaniesManagerWindow:
 
     def on_settings_button_clicked(self, button):
         self.logger.debug("on_setting_button_clicked")
+        PreferencesWindow(parent=self.window)
 
     def on_delete_window(self, *args):
         Gtk.main_quit(*args)
@@ -172,10 +177,11 @@ class CompaniesManagerWindow:
 
         company = self.validate_company()
 
-        if company == None:
+        if company is None:
             dialog = Gtk.MessageDialog(
                     self.window, 0, Gtk.MessageType.ERROR,
-                    Gtk.ButtonsType.CANCEL, "Invalid values")
+                    Gtk.ButtonsType.CANCEL, "Invalid values"
+                    )
 
             dialog.run()
             dialog.destroy()
@@ -187,7 +193,8 @@ class CompaniesManagerWindow:
                 dialog = Gtk.MessageDialog(
                         self.window, 0, Gtk.MessageType.QUESTION,
                         Gtk.ButtonsType.YES_NO,
-                        "The company already exists, do you want to update it?")
+                        "The company already exists, do you want to update it?"
+                        )
 
                 if dialog.run() == Gtk.ResponseType.YES:
                     self.update_company(company)
@@ -210,20 +217,21 @@ class CompaniesManagerWindow:
             dialog = Gtk.MessageDialog(
                     self.window, 0, Gtk.MessageType.QUESTION,
                     Gtk.ButtonsType.YES_NO,
-                    "Are you sure to remove the company?")
+                    "Are you sure to remove the company?"
+                    )
 
             if dialog.run() == Gtk.ResponseType.YES:
                 self.delete_company(company)
 
             dialog.destroy()
         elif column_id == self.DELIVERY_NOTES_COLUMN:
-            pass
+            DeliveryNotesManagerWindow(company=company, parent=self.window)
         elif column_id == self.INVOICE_COLUMN:
-            pass
+            InvoicesWindow(company=company, parent=self.window)
         else:
             self.populate_form(company)
 
-    def get_iter_from_selected_row(self, number):
+    def get_iter_from_selected_row(self, code):
         self.logger.debug("get_iter_from_selected_row")
 
         for row in self.companies_model:
@@ -236,48 +244,56 @@ class CompaniesManagerWindow:
         raise RuntimeError("Cannot find element: % in model", code)
 
     def validate_company(self):
+        # TODO better checking
         self.logger.debug("validate_company")
 
         company = None
-        #try:
-        code = self.code_entry.get_text()
-        name = self.name_entry.get_text()
-        nif = self.nif_entry.get_text()
+        try:
+            code = self.code_entry.get_text()
+            name = self.name_entry.get_text()
+            nif = self.nif_entry.get_text()
 
-        address = self.address_entry.get_text()
-        city = self.city_entry.get_text()
-        state = self.state_entry.get_text()
-        zip_code = self.zip_code_entry.get_text()
-        phone = self.phone_entry.get_text()
-        contact_person = self.contact_person_entry.get_text()
-        alternative_phone = self.alternative_phone_entry.get_text()
-        fax = self.fax_entry.get_text()
-        email = self.email_entry.get_text()
+            address = self.address_entry.get_text()
+            city = self.city_entry.get_text()
+            state = self.state_entry.get_text()
+            zip_code = self.zip_code_entry.get_text()
+            phone = self.phone_entry.get_text()
+            contact_person = self.contact_person_entry.get_text()
+            alternative_phone = self.alternative_phone_entry.get_text()
+            fax = self.fax_entry.get_text()
+            email = self.email_entry.get_text()
 
-        iban = self.iban_entry.get_text()
-        bank_name = self.bank_name_entry.get_text()
+            iban = self.iban_entry.get_text()
+            bank_name = self.bank_name_entry.get_text()
 
-        pt_str = self.payment_type_combo.get_active_text()
-        self.logger.debug("PT %s", pt_str)
-        payment_type = self.PAYMENT_TYPES.inv[pt_str]
-        self.logger.debug("PT %s %s", pt_str, payment_type)
+            pt_str = self.payment_type_combo.get_active_text()
+            payment_type = PAYMENT_TYPES.inv[pt_str]
 
-        expiration_days = self.expiration_days_combo.get_active()
-        first_payment_day = int(self.first_payment_day_entry.get_text())
-        second_payment_day = int(self.second_payment_day_entry.get_text())
-        third_payment_day = int(self.third_payment_day_entry.get_text())
+            expiration_days = self.expiration_days_combo.get_active()
 
-        company = Company(code = code, name = name, nif = nif, address =
-                address, city = city, state = state, zip_code = zip_code,
-                phone = phone, contact_person = contact_person,
-                alternative_phone = alternative_phone, fax = fax, email =
-                email, iban = iban, bank_name = bank_name, payment_type =
-                payment_type, expiration_days = expiration_days,
-                first_payment_day = first_payment_day, second_payment_day =
-                second_payment_day, third_payment_day = third_payment_day)
-        #except Exception as ex:
-        #    self.logger.error("Exception: %: %", ex.errno, ex.strerror)
-        #    self.logger.error("Invalid data")
+            fpday = self.first_payment_day_entry.get_text()
+            spday = self.second_payment_day_entry.get_text()
+            tpday = self.third_payment_day_entry.get_text()
+
+            first_payment_day = int(fpday) if fpday else None
+            second_payment_day = int(spday) if spday else None
+            third_payment_day = int(tpday) if tpday else None
+
+            company = Company(
+                code=code, name=name, nif=nif, address=address, city=city,
+                state=state, zip_code=zip_code, phone=phone,
+                contact_person=contact_person,
+                alternative_phone=alternative_phone, fax=fax, email=email,
+                iban=iban, bank_name=bank_name, payment_type=payment_type,
+                expiration_days=expiration_days,
+                first_payment_day=first_payment_day,
+                second_payment_day=second_payment_day,
+                third_payment_day=third_payment_day
+                )
+
+        except Exception as ex:
+            self.logger.error("Exception: %: %", ex.errno, ex.strerror)
+            self.logger.error("Invalid data")
 
         return company
 
@@ -289,27 +305,35 @@ class CompaniesManagerWindow:
 
         self.logger.info("adding company to model")
         self.companies_model.append([company.code, company.name, company.nif,
-            "gtk-delete", "gtk-file", "gtk-print"])
+                                    "gtk-delete", "gtk-file", "gtk-print"]
+                                    )
 
     def update_company(self, company):
         self.logger.debug("update_company")
 
         self.logger.info("saving company to database")
         self.logger.debug("company: %s", company)
-        Company.update(code = code, name = name, nif = nif, address = address,
-                city = city, state = state, zip_code = zip_code, phone = phone,
-                contact_person = contact_person, alternative_phone =
-                alternative_phone, fax = fax, email = email, iban = iban,
-                bank_name = bank_name, payment_type = payment_type,
-                expiration_days = expiration_days, first_payment_day =
-                first_payment_day, second_payment_day = second_payment_day,
-                third_payment_day = third_payment_day).execute()
+        Company.update(
+                code=company.code, name=company.name, nif=company.nif,
+                address=company.address, city=company.city,
+                state=company.state, zip_code=company.zip_code,
+                phone=company.phone, contact_person=company.contact_person,
+                alternative_phone=company.alternative_phone,
+                fax=company.fax, email=company.email, iban=company.iban,
+                bank_name=company.bank_name, payment_type=company.payment_type,
+                expiration_days=company.expiration_days,
+                first_payment_day=company.first_payment_day,
+                second_payment_day=company.second_payment_day,
+                third_payment_day=company.third_payment_day
+                ).execute()
 
         self.logger.info("updating company to model")
-        tree_iter = self.get_iter_from_selected_row(company.number)
-        self.companies_model.set(tree_iter,
+        tree_iter = self.get_iter_from_selected_row(company.code)
+        self.companies_model.set(
+                tree_iter,
                 [self.CODE_COLUMN, self.NAME_COLUMN, self.NIF_COLUMN],
-                [company.code, company.name, company.nif])
+                [company.code, company.name, company.nif]
+                )
 
     def delete_company(self, company):
         self.logger.debug("delete_company")

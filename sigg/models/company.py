@@ -1,5 +1,6 @@
-from peewee import *
+from peewee import Model, CharField, IntegerField
 from constants import DB
+
 
 class Company(Model):
     code = CharField(index=True, null=False, unique=True, max_length=4)
@@ -23,20 +24,23 @@ class Company(Model):
     third_payment_day = IntegerField(null=True)
 
     def __repr__(self):
-        s = ("[ code: {}, name: {}, nif: {}, address: {}, city: {}, state: {},"
-                "zip_code: {}, phone: {}, contact_person: {}, "
+        s = (
+                "[ code: {}, name: {}, nif: {}, address: {}, city: {}, "
+                "state: {}, zip_code: {}, phone: {}, contact_person: {}, "
                 "alternative_phone: {}, fax: {}, email: {}, iban: {}, "
                 "bank_name: {}, payment_type: {}, expiration_days: {}, "
                 "first_payment_day: {}, second_payment_day: {}, "
-                "third_payment_day: {} ]")
+                "third_payment_day: {} ]"
+                )
 
-        return s.format(self.code, self.name, self.nif,
-                self.address, self.city, self.state, self.zip_code,
-                self.phone, self.contact_person, self.alternative_phone,
-                self.fax, self.email, self.iban, self.bank_name,
-                self.payment_type, self.expiration_days,
+        return s.format(
+                self.code, self.name, self.nif, self.address, self.city,
+                self.state, self.zip_code, self.phone, self.contact_person,
+                self.alternative_phone, self.fax, self.email, self.iban,
+                self.bank_name, self.payment_type, self.expiration_days,
                 self.first_payment_day, self.second_payment_day,
-                self.third_payment_day)
+                self.third_payment_day
+                )
 
     class Meta:
         database = DB

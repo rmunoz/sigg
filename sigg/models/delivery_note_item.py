@@ -1,6 +1,8 @@
-from peewee import *
+from peewee import Model
+from peewee import CharField, IntegerField, DecimalField, ForeignKeyField
 from constants import DB
 from models import DeliveryNote
+
 
 class DeliveryNoteItem(Model):
     delivery_note = ForeignKeyField(DeliveryNote, related_name="items")
@@ -10,11 +12,15 @@ class DeliveryNoteItem(Model):
     description = CharField(null=False)
 
     def __repr__(self):
-        s = """[ delivery_note: {}, item_type: {}, units: {}, price: {},
-        description: {} ]""".format(self.delivery_note, self.item_type,
-        self.units, self.price, self.description)
+        s = (
+                "[ delivery_note: {}, item_type: {}, units: {}, price: {},"
+                "description: {} ]"
+                )
 
-        return s
+        return s.format(
+                self.delivery_note, self.item_type, self.units, self.price,
+                self.description
+                )
 
     class Meta:
         database = DB

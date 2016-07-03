@@ -1,11 +1,12 @@
 import logging
 
-from decimal import *
+from decimal import Decimal
 
 from gi.repository import Gtk
 
 from constants import RESOURCES_DIR
 from models import Vehicle
+
 
 class VehiclesManagerWindow:
 
@@ -52,7 +53,9 @@ class VehiclesManagerWindow:
     def populate_treeview_model(self):
         for vehicle in self.vehicles:
             self.vehicles_model.append([str(vehicle.number), vehicle.plate,
-                vehicle.brand, vehicle.model, "gtk-delete"])
+                                        vehicle.brand, vehicle.model,
+                                        "gtk-delete"]
+                                       )
 
     def populate_form(self, vehicle):
         self.logger.debug("populate_form")
@@ -90,7 +93,7 @@ class VehiclesManagerWindow:
 
         vehicle = self.validate_vehicle()
 
-        if vehicle == None:
+        if vehicle is None:
             dialog = Gtk.MessageDialog(
                     self.window, 0, Gtk.MessageType.ERROR,
                     Gtk.ButtonsType.CANCEL, "Invalid values")
@@ -105,7 +108,8 @@ class VehiclesManagerWindow:
                 dialog = Gtk.MessageDialog(
                         self.window, 0, Gtk.MessageType.QUESTION,
                         Gtk.ButtonsType.YES_NO,
-                        "The vehicle already exists, do you want to update it?")
+                        "The vehicle already exists, do you want to update it?"
+                        )
 
                 if dialog.run() == Gtk.ResponseType.YES:
                     self.update_vehicle(vehicle)
@@ -163,8 +167,10 @@ class VehiclesManagerWindow:
             if(len(plate) != 7):
                 raise ValueError
 
-            vehicle = Vehicle(number = number, plate = plate, brand = brand,
-                    model = model, hour_price = hour_price, km_price = km_price)
+            vehicle = Vehicle(number=number, plate=plate, brand=brand,
+                              model=model, hour_price=hour_price,
+                              km_price=km_price
+                              )
         except:
             self.logger.error("Invalid data")
 
@@ -178,23 +184,26 @@ class VehiclesManagerWindow:
 
         self.logger.info("adding vehicle to model")
         self.vehicles_model.append([str(vehicle.number), vehicle.plate,
-            vehicle.brand, vehicle.model, "gtk-delete"])
+                                    vehicle.brand, vehicle.model, "gtk-delete"]
+                                   )
 
     def update_vehicle(self, vehicle):
         self.logger.debug("update_vehicle")
 
         self.logger.info("saving vehicle to database")
         self.logger.debug("vehicle: %s", vehicle)
-        Vehicle.update(plate = vehicle.plate, brand = vehicle.brand,
-                model = vehicle.model, hour_price = vehicle.hour_price,
-                km_price = vehicle.km_price).where(Vehicle.number ==
-                        vehicle.number).execute()
+        Vehicle.update(plate=vehicle.plate, brand=vehicle.brand,
+                       model=vehicle.model, hour_price=vehicle.hour_price,
+                       km_price=vehicle.km_price
+                       ).where(Vehicle.number == vehicle.number).execute()
 
         self.logger.info("updating vehicle to model")
         tree_iter = self.get_iter_from_selected_row(vehicle.number)
-        self.vehicles_model.set(tree_iter,
+        self.vehicles_model.set(
+                tree_iter,
                 [self.PLATE_COLUMN, self.BRAND_COLUMN, self.MODEL_COLUMN],
-                [vehicle.plate, vehicle.brand, vehicle.model])
+                [vehicle.plate, vehicle.brand, vehicle.model]
+                )
 
     def delete_vehicle(self, vehicle):
         self.logger.debug("delete_vehicle")

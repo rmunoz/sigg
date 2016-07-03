@@ -16,16 +16,30 @@
       </object>
     </child>
   </object>
+  <object class="GtkListStore" id="delivery_note_items_model">
+    <columns>
+      <!-- column-name item_type -->
+      <column type="gchararray"/>
+      <!-- column-name item_units -->
+      <column type="guint"/>
+      <!-- column-name item_price -->
+      <column type="gchararray"/>
+      <!-- column-name item_subtotal -->
+      <column type="gchararray"/>
+      <!-- column-name item_remove -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkListStore" id="delivery_notes_model">
     <columns>
-      <!-- column-name delivery_note_id -->
+      <!-- column-name delivery_note_code -->
       <column type="gchararray"/>
       <!-- column-name delivery_note_date -->
       <column type="gchararray"/>
       <!-- column-name delivery_note_vehicle_number -->
       <column type="gint"/>
-      <!-- column-name delivery_invoiced_name -->
-      <column type="gchararray"/>
+      <!-- column-name delivery_note_invoiced -->
+      <column type="gboolean"/>
       <!-- column-name delivery_note_remove -->
       <column type="gchararray"/>
     </columns>
@@ -35,6 +49,7 @@
     <property name="border_width">5</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
+    <signal name="delete-event" handler="on_delete_window" swapped="no"/>
     <child>
       <object class="GtkBox" id="window_box">
         <property name="visible">True</property>
@@ -127,11 +142,14 @@
                 <property name="spacing">5</property>
                 <property name="homogeneous">True</property>
                 <child>
-                  <object class="GtkLabel" id="id_label">
+                  <object class="GtkLabel" id="code_label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="halign">start</property>
-                    <property name="label" translatable="yes">Delivery note id</property>
+                    <property name="label" translatable="yes">Delivery note code</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -140,7 +158,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="id_entry">
+                  <object class="GtkEntry" id="code_entry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
@@ -163,6 +181,9 @@
                     <property name="can_focus">False</property>
                     <property name="halign">end</property>
                     <property name="label" translatable="yes">Date</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -197,6 +218,9 @@
                     <property name="can_focus">False</property>
                     <property name="halign">end</property>
                     <property name="label" translatable="yes">Vehicle</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -236,6 +260,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="use_stock">True</property>
+                    <signal name="clicked" handler="on_save_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -266,19 +291,20 @@
                     <property name="search_column">0</property>
                     <property name="show_expanders">False</property>
                     <property name="activate_on_single_click">True</property>
+                    <signal name="row-activated" handler="on_delivery_notes_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeview-selection1"/>
                     </child>
                     <child>
-                      <object class="GtkTreeViewColumn" id="delivery_note_id_column">
+                      <object class="GtkTreeViewColumn" id="delivery_note_code_column">
                         <property name="sizing">autosize</property>
                         <property name="min_width">100</property>
-                        <property name="title" translatable="yes">ID</property>
+                        <property name="title" translatable="yes">Code</property>
                         <property name="expand">True</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
                         <property name="sort_order">descending</property>
-                        <property name="sort_column_id">1</property>
+                        <property name="sort_column_id">0</property>
                         <child>
                           <object class="GtkCellRendererText" id="delivery_note_id_cell_renderer"/>
                           <attributes>
@@ -296,7 +322,7 @@
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
                         <property name="sort_order">descending</property>
-                        <property name="sort_column_id">2</property>
+                        <property name="sort_column_id">1</property>
                         <child>
                           <object class="GtkCellRendererText" id="delivery_note_date_cell_renderer"/>
                           <attributes>
@@ -314,7 +340,7 @@
                         <property name="title" translatable="yes">Nº</property>
                         <property name="expand">True</property>
                         <property name="clickable">True</property>
-                        <property name="sort_column_id">3</property>
+                        <property name="sort_column_id">2</property>
                         <child>
                           <object class="GtkCellRendererText" id="delivery_note_vehicle_number_cell_renderer"/>
                           <attributes>
@@ -333,23 +359,23 @@
                         <property name="expand">True</property>
                         <property name="clickable">True</property>
                         <property name="sort_indicator">True</property>
-                        <property name="sort_column_id">4</property>
+                        <property name="sort_column_id">3</property>
                         <child>
-                          <object class="GtkCellRendererPixbuf" id="delivery_note_invoiced_cell_renderer"/>
+                          <object class="GtkCellRendererToggle" id="delivery_note_invoiced_cell_renderer"/>
                           <attributes>
-                            <attribute name="stock-id">3</attribute>
+                            <attribute name="active">3</attribute>
                           </attributes>
                         </child>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkTreeViewColumn" id="delivery_note_action_column">
+                      <object class="GtkTreeViewColumn" id="delivery_note_remove_column">
                         <property name="sizing">fixed</property>
                         <property name="fixed_width">20</property>
                         <property name="min_width">20</property>
                         <property name="max_width">20</property>
                         <property name="clickable">True</property>
-                        <property name="sort_column_id">0</property>
+                        <property name="sort_column_id">4</property>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="delivery_note_remove_cell_renderer"/>
                           <attributes>
@@ -392,22 +418,25 @@
             <property name="orientation">vertical</property>
             <property name="spacing">5</property>
             <child>
-              <object class="GtkBox" id="item_widgets">
+              <object class="GtkGrid" id="item_widgets">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="spacing">5</property>
-                <property name="homogeneous">True</property>
+                <property name="row_spacing">5</property>
+                <property name="column_spacing">5</property>
+                <property name="column_homogeneous">True</property>
                 <child>
                   <object class="GtkLabel" id="item_label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="halign">start</property>
                     <property name="label" translatable="yes">Item</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
                   </packing>
                 </child>
                 <child>
@@ -415,16 +444,11 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="halign">start</property>
-                    <items>
-                      <item id="0" translatable="yes">Horas</item>
-                      <item id="1" translatable="yes">Km</item>
-                      <item id="2" translatable="yes">Varios</item>
-                    </items>
+                    <signal name="changed" handler="on_item_type_combo_changed" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
                   </packing>
                 </child>
                 <child>
@@ -433,15 +457,17 @@
                     <property name="can_focus">False</property>
                     <property name="halign">end</property>
                     <property name="label" translatable="yes">Units</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">2</property>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="item_units_entry">
+                  <object class="GtkEntry" id="units_entry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="max_length">3</property>
@@ -452,9 +478,8 @@
                     <property name="input_purpose">number</property>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">3</property>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">0</property>
                   </packing>
                 </child>
                 <child>
@@ -463,15 +488,17 @@
                     <property name="can_focus">False</property>
                     <property name="halign">end</property>
                     <property name="label" translatable="yes">Price</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">4</property>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="item_price_entry">
+                  <object class="GtkEntry" id="price_entry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="max_length">10</property>
@@ -480,9 +507,32 @@
                     <property name="placeholder_text" translatable="yes">0000000.00</property>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">5</property>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="description_entry">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="placeholder_text" translatable="yes">Write description here...</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">1</property>
+                    <property name="width">5</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="description_label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Description</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">1</property>
                   </packing>
                 </child>
               </object>
@@ -506,6 +556,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="use_stock">True</property>
+                    <signal name="clicked" handler="on_add_item_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -527,12 +578,13 @@
                 <property name="can_focus">True</property>
                 <property name="shadow_type">in</property>
                 <child>
-                  <object class="GtkTreeView" id="items_view">
+                  <object class="GtkTreeView" id="delivery_note_items_view">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="model">items_model</property>
+                    <property name="model">delivery_note_items_model</property>
                     <property name="search_column">0</property>
                     <property name="activate_on_single_click">True</property>
+                    <signal name="row-activated" handler="on_items_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeview-selection"/>
                     </child>
@@ -541,6 +593,7 @@
                         <property name="sizing">autosize</property>
                         <property name="title" translatable="yes">Type</property>
                         <property name="expand">True</property>
+                        <property name="sort_column_id">0</property>
                         <child>
                           <object class="GtkCellRendererText" id="item_type_cell_renderer"/>
                           <attributes>
@@ -554,6 +607,7 @@
                         <property name="sizing">autosize</property>
                         <property name="title" translatable="yes">Units</property>
                         <property name="expand">True</property>
+                        <property name="sort_column_id">1</property>
                         <child>
                           <object class="GtkCellRendererText" id="item_units_cell_renderer"/>
                           <attributes>
@@ -567,6 +621,7 @@
                         <property name="sizing">autosize</property>
                         <property name="title" translatable="yes">Price</property>
                         <property name="expand">True</property>
+                        <property name="sort_column_id">2</property>
                         <child>
                           <object class="GtkCellRendererText" id="item_price_cell_renderer"/>
                           <attributes>
@@ -580,6 +635,7 @@
                         <property name="sizing">autosize</property>
                         <property name="title" translatable="yes">Subtotal</property>
                         <property name="expand">True</property>
+                        <property name="sort_column_id">3</property>
                         <child>
                           <object class="GtkCellRendererText" id="item_total_cell_renderer"/>
                           <attributes>
@@ -595,7 +651,7 @@
                         <property name="min_width">20</property>
                         <property name="max_width">20</property>
                         <property name="clickable">True</property>
-                        <property name="sort_column_id">0</property>
+                        <property name="sort_column_id">4</property>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="item_remove_cell_renderer"/>
                           <attributes>
@@ -680,6 +736,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <signal name="clicked" handler="on_clean_button_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -694,6 +751,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <signal name="clicked" handler="on_quit_button_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -710,20 +768,6 @@
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkListStore" id="items_model">
-    <columns>
-      <!-- column-name item_type -->
-      <column type="gchararray"/>
-      <!-- column-name item_units -->
-      <column type="guint"/>
-      <!-- column-name item_price -->
-      <column type="gchararray"/>
-      <!-- column-name item_subtotal -->
-      <column type="gchararray"/>
-      <!-- column-name item_remove -->
-      <column type="gchararray"/>
-    </columns>
   </object>
   <object class="GtkListStore" id="search_companies_model">
     <columns>

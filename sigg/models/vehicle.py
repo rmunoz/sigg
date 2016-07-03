@@ -1,5 +1,6 @@
-from peewee import *
+from peewee import Model, IntegerField, CharField, DecimalField
 from constants import DB
+
 
 class Vehicle(Model):
     number = IntegerField(index=True, null=False, unique=True)
@@ -10,11 +11,15 @@ class Vehicle(Model):
     km_price = DecimalField(null=False, max_digits=10, decimal_places=2)
 
     def __repr__(self):
-        s = ("[ number: {}, plate: {}, brand: {}, model: {}, hour_price: {}, "
-            "km_price: {} ]")
+        s = (
+                "[ number: {}, plate: {}, brand: {}, model: {}, "
+                "hour_price: {}, km_price: {} ]"
+                )
 
-        return s.format(self.number, self.plate, self.brand, self.model,
-                self.hour_price, self.km_price)
+        return s.format(
+                self.number, self.plate, self.brand, self.model,
+                self.hour_price, self.km_price
+                )
 
     class Meta:
         database = DB
